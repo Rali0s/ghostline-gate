@@ -1,0 +1,263 @@
+include/net/stream_buffer.hpp
+
+#pragma once
+#include "core/types.hpp"
+#include <cstddef>
+
+class StreamBuffer {
+public:
+    void append(const byte* data, size_t len) {
+        buffer_.insert(buffer_.end(), data, data + len);
+    }
+
+    size_t size() const { return buffer_.size(); }
+
+    bool read_bytes(ByteVec& out, size_t len) {
+        if (buffer_.size() < len) return false;
+        out.assign(buffer_.begin(), buffer_.begin() + len);
+        buffer_.erase(buffer_.begin(), buffer_.begin() + len);
+        return true;
+    }
+
+    bool peek_bytes(ByteVec& out, size_t len) const {
+        if (buffer_.size() < len) return false;
+        out.assign(buffer_.begin(), buffer_.begin() + len);
+        return true;
+    }
+
+private:
+    ByteVec buffer_;
+};
+
+
+include/net/frame.hpp
+
+#pragma once
+#include "core/types.hpp"
+#include <cstdint>
+
+enum class Direction {
+    ClientToServer,
+    ServerToClient
+};
+
+struct Frame {
+    uint64_t timestamp_ns;
+    uint32_t flow_id;
+    Direction dir;
+    ByteVec payload;
+};
+
+
+include/net/frame_extractor.hpp
+
+#pragma once
+#include "net/frame.hpp"
+#include "net/stream_buffer.hpp"
+
+class FrameExtractor {
+public:
+    void push(const byte* p, size_t n) {
+        sb_.append(p, n);
+    }
+
+    bool has_frame() const {
+        uint32_t len;
+        if (!sb_.peek_u32(len)) return false;
+        return sb_.can_read(4 + len);
+    }
+
+    Frame pop(uint64_t ts, uint32_t flow, Direction dir) {
+        uint32_t len;
+        sb_.peek_u32(len);
+        sb_.consume(4);
+
+        Frame f;
+        f.timestamp_ns = ts;
+        f.flow_id = flow;
+        f.dir = dir;
+        f.payload = sb_.take(len);
+        return f;
+    }
+
+private:
+    StreamBuffer sb_;
+};
+
+
+7️⃣ include/net/encode.hpp
+#pragma once
+#include "core/types.hpp"
+#include <arpa/inet.h>
+#include <cstring>
+
+inline ByteVec encode_length_prefixed(const ByteVec& payload) {
+    ByteVec out;
+    out.reserve(4 + payload.size());
+
+    uint32_t nlen = htonl(static_cast<uint32_t>(payload.size()));
+    byte hdr[4];
+    std::memcpy(hdr, &nlen, 4);
+
+    out.insert(out.end(), hdr, hdr + 4);
+    out.insert(out.end(), payload.begin(), payload.end());
+    return out;
+}
+
+
+
+src/net/frame_extractor.cpp
+
+#include "net/frame_extractor.hpp"
+#include <arpa/inet.h>
+#include <cstring>
+
+bool FrameExtractor::push_bytes(const byte* data, size_t len) {
+    buffer_.append(data, len);
+    return true;
+}
+
+bool FrameExtractor::has_frame() const {
+    ByteVec hdr;
+    if (!buffer_.peek_bytes(hdr, 4)) return false;
+
+    uint32_t netlen;
+    std::memcpy(&netlen, hdr.data(), 4);
+    uint32_t len = ntohl(netlen);
+
+    return buffer_.size() >= (4 + len);
+}
+
+Frame FrameExtractor::pop_frame(uint64_t ts, uint32_t flow, Direction dir) {
+    ByteVec hdr;
+    buffer_.read_bytes(hdr, 4);
+
+    uint32_t netlen;
+    std::memcpy(&netlen, hdr.data(), 4);
+    uint32_t len = ntohl(netlen);
+
+    ByteVec payload;
+    buffer_.read_bytes(payload, len);
+
+    Frame f;
+    f.timestamp_ns = ts;
+    f.flow_id = flow;
+    f.dir = dir;
+    f.payload = std::move(payload);
+    return f;
+}
+
+
+include/transform/transform.hpp
+
+#pragma once
+#include "net/frame.hpp"
+
+class Transform {
+public:
+    virtual ~Transform() = default;
+    virtual void apply(Frame& frame) = 0;
+};
+
+
+Payload Patch Transform
+
+// include/transform/patch_transform.hpp
+#pragma once
+#include "transform/transform.hpp"
+
+class PatchTransform : public Transform {
+public:
+    void apply(Frame& frame) override {
+        // demo: uppercase ASCII
+        for (auto& b : frame.payload) {
+            if (b >= 'a' && b <= 'z')
+                b = b - 32;
+        }
+    }
+};
+
+
+Helper Function
+
+static ByteVec encode_frame(const Frame& f) {
+    ByteVec out;
+    uint32_t len = htonl(static_cast<uint32_t>(f.payload.size()));
+    byte hdr[4];
+    std::memcpy(hdr, &len, 4);
+
+    out.insert(out.end(), hdr, hdr + 4);
+    out.insert(out.end(), f.payload.begin(), f.payload.end());
+    return out;
+}
+
+
+Replace this block in linux_epoll_proxy.cpp:
+
+// OLD: raw chunk relay
+chain.apply(chunk);
+send(...)
+
+
+// per-direction extractor
+static std::unordered_map<uint32_t, FrameExtractor> extractors;
+
+auto& ex = extractors[(f.id << 1) | (ctx.is_client ? 0 : 1)];
+ex.push_bytes(readbuf.data(), r);
+
+while (ex.has_frame()) {
+    Frame frame = ex.pop_frame(now_ns(), f.id, dir);
+
+    chain.apply(frame);  // SAFE MODIFICATION
+
+    ByteVec encoded = encode_frame(frame);
+    queue_bytes(dst.outq, encoded.data(), encoded.size());
+}
+
+
+
+
+#include "net/frame_extractor.hpp"
+#include "net/encode.hpp"
+#include "transform/chain.hpp"
+
+#include <unordered_map>
+#include <deque>
+
+// ================== FRAME BRIDGE (PLACE HERE) ==================
+
+// one extractor per (flow, direction)
+static std::unordered_map<uint64_t, FrameExtractor> extractors;
+
+static inline uint64_t extractor_key(uint32_t flow, Direction dir) {
+    return (uint64_t(flow) << 1) |
+           (dir == Direction::ServerToClient ? 1ULL : 0ULL);
+}
+
+static void process_chunk(
+    uint32_t flow_id,
+    Direction dir,
+    const byte* data,
+    size_t len,
+    uint64_t ts,
+    TransformChain& chain,
+    std::deque<ByteVec>& outq
+) {
+    auto& ex = extractors[extractor_key(flow_id, dir)];
+    ex.push(data, len);
+
+    while (ex.has_frame()) {
+        Frame f = ex.pop(ts, flow_id, dir);
+
+        // semantic modification
+        chain.apply(f);
+
+        // re-encode and queue
+        if (!f.payload.empty()) {
+            outq.push_back(encode_length_prefixed(f.payload));
+        }
+    }
+}
+
+// ===============================================================
+
