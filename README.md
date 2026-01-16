@@ -37,9 +37,9 @@ This property is referred to internally as **blackhole-safe mirroring**.
 
 Client ───►│ Ghostline │───► Server
 
-Client ───►│ AMQ │───► Server
+Client ───►│ Ghostline │───► | AMQ's - Goal Bind to Queue │───► Server
 
-Server ◄───│ AMQ│◄─── Client
+Server ◄───│ AMQ │◄─── Client
 
 Server ◄───│ Ghostline │◄─── Client
 
