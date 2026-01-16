@@ -1,5 +1,7 @@
 # Liminal Ghostline-Gate
 
+## Think: https://activemq.apache.org/components/classic/documentation/mqtt
+
 **Liminal Ghostline-Gate** is a Linux-first, stream-aware relay framework for inspecting and transforming **data in transit** without becoming an endpoint.
 
 It operates exclusively in the **liminal space** between sender and receiver — observing, mirroring, and optionally reshaping traffic while preserving continuity, directionality, and ownership boundaries.
