@@ -1,6 +1,6 @@
 # Liminal Ghostline-Gate
 
-# Think: 
+### Think: 
 https://activemq.apache.org/components/classic/documentation/mqtt
 
 **Liminal Ghostline-Gate** is a Linux-first, stream-aware relay framework for inspecting and transforming **data in transit** without becoming an endpoint.
