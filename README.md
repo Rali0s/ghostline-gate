@@ -36,6 +36,11 @@ This property is referred to internally as **blackhole-safe mirroring**.
 ![Liminal Ghostline Architecture](bHole-001.png)
 
 Client ───►│ Ghostline │───► Server
+
+Client ───►│ AMQ │───► Server
+
+Server ◄───│ AMQ│◄─── Client
+
 Server ◄───│ Ghostline │◄─── Client
 
 Each direction is:
