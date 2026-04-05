@@ -1,5 +1,9 @@
 # Ghostline Gate
 
+## Hacking
+
+However much I know and work with the 'Mailboxes' I still need to finish my Rpi and OPi setup before running a good ACID test. Notwithstanding, you are welcome to test this version and framework against an RMQ or MQTT yourselves.
+
 Ghostline Gate is a transport-first interception and mutation workbench for live TCP traffic. It is built around one rule above all others:
 
 **original delivery always wins unless Ghostline can prove a modified release is safe.**
