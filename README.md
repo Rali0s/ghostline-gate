@@ -6,7 +6,7 @@ Ghostline Gate is a transport-first interception and mutation workbench for live
 
 Today, Ghostline is a macOS-first Phase 1 system with a production-shaped CLI core, a usable Qt operator app, compiled-in protocol plugins, file-driven controls, JSONL audit/action streams, saved target profiles, and a pending review queue for risky mutations.
 
-![Ghostline Overview](/Users/premise/Documents/github/ghostline-gate/Ghostline.png)
+![Ghostline Overview](Ghostline.png)
 
 ## What Ghostline Is
 
