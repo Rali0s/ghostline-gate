@@ -1,0 +1,169 @@
+.Dd March 27, 2026
+.Dt GHOSTLINE_CLI 1
+.Os
+.Sh NAME
+.Nm ghostline_cli
+.Nd transport-first TCP relay with candidate mutation, rules loading, PID discovery, and JSONL audit streams
+.Sh SYNOPSIS
+.Nm
+.Ar listen_port upstream_host upstream_port
+.Op options
+.Nm
+.Fl -search-pid Ar term
+.Op search options
+.Nm
+.Fl -help-rules | -help-search | -help-examples | -help-cheatsheet
+.Sh DESCRIPTION
+.Nm
+is a macOS-first TCP relay for observing traffic, staging mutation candidates, and preserving original delivery when mutation safety is not provable.
+It supports:
+.Bl -bullet
+.It
+raw live mutation
+.It
+byte-window mutation
+.It
+MQTT framing and PUBLISH mutation
+.It
+rules-driven configuration
+.It
+PID search for target discovery
+.It
+human-readable and JSONL audit streams
+.El
+.Sh CORE OPTIONS
+.Bl -tag -width "--mqtt-review-threshold"
+.It Fl -start-hex Ar hex
+Start marker for the byte-window plugin.
+.It Fl -end-hex Ar hex
+End marker for the byte-window plugin.
+.It Fl -replace-text Ar text
+Replacement body for matched windows.
+.It Fl -raw-find-text Ar text
+Find text for raw live mutation.
+.It Fl -raw-live
+Enable protocol-agnostic live raw mutation.
+.It Fl -raw-chunk-bytes Ar n
+Frame raw live traffic into fixed-size chunks.
+.It Fl -mutate-direction Ar c2s|s2c|both
+Choose which direction may mutate.
+.It Fl -raw-review-threshold Ar n
+Create review/action items for raw mutations at or above this byte size.
+.It Fl -mqtt-review-threshold Ar n
+Create review/action items for MQTT mutations at or above this payload size.
+.It Fl -byte-review-threshold Ar n
+Create review/action items for byte-window mutations at or above this payload size.
+.It Fl -rewrite-u32-prefix
+Rewrite a leading 4-byte big-endian body size.
+.It Fl -max-plugin-buffer Ar n
+Maximum bytes a protocol plugin may hold before fallback.
+.It Fl -protocol-hint Ar name
+Prefer a compiled-in plugin:
+.Dq mqtt ,
+.Dq rabbitmq ,
+.Dq activemq ,
+.Dq amqp ,
+.Dq azure-service-bus ,
+.Dq kafka ,
+.Dq byte-window ,
+or
+.Dq raw-live .
+.El
+.Sh RULES OPTIONS
+.Bl -tag -width "--rules-var"
+.It Fl -rules Ar path
+Load external control rules from JSON, Jinja-style JSON, or a lightweight HCL/Terraform-style flat config.
+.It Fl -rules-var Ar key=value
+Template variable used when rendering Jinja-style rules.
+.El
+.Pp
+Supported rule keys include:
+.Bl -bullet
+.It
+listen_port, upstream_host, upstream_port
+.It
+protocol_hint, start_marker_hex, end_marker_hex
+.It
+replace_text, raw_find_text, raw_live, raw_live_mode
+.It
+raw_chunk_bytes, mutate_direction, rewrite_u32_prefix
+.It
+raw_review_threshold_bytes, mqtt_review_threshold_bytes
+.It
+byte_window_review_threshold_bytes, max_plugin_buffer_bytes
+.It
+audit_log_path, action_log_path, audit_json_path, action_json_path
+.El
+.Sh SEARCH OPTIONS
+.Bl -tag -width "--established-only"
+.It Fl -search-pid Ar term
+Search running TCP processes by command substring or PID.
+.It Fl -search-port Ar port
+Filter search results by local or remote TCP port.
+.It Fl -search-state Ar state
+Filter search results by TCP state such as
+.Dq LISTEN
+or
+.Dq ESTABLISHED .
+.It Fl -search-json
+Emit search results as JSON.
+.It Fl -listen-only
+Restrict results to listening sockets.
+.It Fl -established-only
+Restrict results to established sockets.
+.El
+.Sh OUTPUT OPTIONS
+.Bl -tag -width "--actions-json"
+.It Fl -audit-log Ar path
+Write text audit events to the given file.
+.It Fl -audit-json Ar path
+Write audit events as JSONL.
+.It Fl -action-log Ar path
+Write text action items to the given file.
+.It Fl -actions-json Ar path
+Write action items as JSONL.
+.El
+.Sh EXAMPLES
+.Bl -bullet
+.It
+Search for a process:
+.Bd -literal -offset indent
+ghostline_cli --search-pid ollama
+.Ed
+.It
+Search for listeners on MQTT port 1883:
+.Bd -literal -offset indent
+ghostline_cli --search-port 1883 --listen-only
+.Ed
+.It
+Run raw live mutation:
+.Bd -literal -offset indent
+ghostline_cli 7777 127.0.0.1 8888 \e
+  --protocol-hint raw-live \e
+  --raw-live \e
+  --raw-find-text hello \e
+  --replace-text patch \e
+  --mutate-direction c2s
+.Ed
+.It
+Run MQTT mutation:
+.Bd -literal -offset indent
+ghostline_cli 7777 127.0.0.1 1883 \e
+  --protocol-hint mqtt \e
+  --replace-text patched-payload \e
+  --mqtt-review-threshold 8
+.Ed
+.It
+Run from JSON rules:
+.Bd -literal -offset indent
+ghostline_cli 7777 127.0.0.1 8888 \e
+  --rules examples/rules/raw-live.json
+.Ed
+.El
+.Sh MAN PAGE
+To open this man page from the repository root:
+.Bd -literal -offset indent
+MANPATH="$PWD/man:${MANPATH}" man ghostline_cli
+.Ed
+.Sh SEE ALSO
+.Xr man 1

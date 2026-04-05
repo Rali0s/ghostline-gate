@@ -1,0 +1,34 @@
+{
+  "host_contains": [
+    "MQTT HOST tx CONNECT",
+    "MQTT HOST rx packet=2",
+    "MQTT HOST tx PUBLISH topic=demo/topic payload=hello mqtt payload"
+  ],
+  "server_contains": [
+    "MQTT SERVER tx CONNACK",
+    "MQTT SERVER rx packet=3 topic=demo/topic payload=patched-payload"
+  ],
+  "audit_patterns": [
+    "plugin=mqtt type=plugin-detect",
+    "packet=PUBLISH",
+    "candidate-1-c2s-mqtt-3",
+    "validation=mqtt-publish-reframed|validation=mqtt-publish-validated",
+    "type=candidate-release-modified",
+    "type=candidate-release-original"
+  ],
+  "actions_contains": [
+    "Review mqtt mutation",
+    "trigger-1-c2s-mqtt-3",
+    "candidate-1-c2s-mqtt-3"
+  ],
+  "audit_json_contains": [
+    "\"plugin\":\"mqtt\"",
+    "\"type\":\"candidate\"",
+    "\"candidate_id\":\"candidate-1-c2s-mqtt-3\""
+  ],
+  "actions_json_contains": [
+    "\"title\":\"Review mqtt mutation\"",
+    "\"plugin\":\"mqtt\""
+  ],
+  "action_count": 1
+}

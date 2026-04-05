@@ -1,0 +1,33 @@
+{
+  "host_contains": [
+    "HOST tx bytes=23 payload=hello through ghostline",
+    "HOST rx bytes=34 payload=server-ack:patch through ghostline"
+  ],
+  "server_contains": [
+    "SERVER rx bytes=23 payload=patch through ghostline",
+    "SERVER tx bytes=34 payload=server-ack:patch through ghostline"
+  ],
+  "audit_patterns": [
+    "trigger-1-c2s-raw-live-1",
+    "candidate-1-c2s-raw-live-1",
+    "plugin=raw-live type=framed-packet",
+    "plugin=raw-live type=candidate stage=released-modified",
+    "flags=allow-size-mutated",
+    "type=candidate stage=released-original"
+  ],
+  "actions_contains": [
+    "Review raw live mutation",
+    "trigger-1-c2s-raw-live-1",
+    "candidate-1-c2s-raw-live-1"
+  ],
+  "audit_json_contains": [
+    "\"plugin\":\"raw-live\"",
+    "\"type\":\"candidate\"",
+    "\"stage\":\"released-modified\""
+  ],
+  "actions_json_contains": [
+    "\"title\":\"Review raw live mutation\"",
+    "\"plugin\":\"raw-live\""
+  ],
+  "action_count": 1
+}

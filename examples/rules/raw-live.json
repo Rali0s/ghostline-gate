@@ -1,0 +1,11 @@
+{
+  "protocol_hint": "raw-live",
+  "raw_live": true,
+  "raw_find_text": "hello",
+  "replace_text": "patch",
+  "mutate_direction": "c2s",
+  "raw_chunk_bytes": 1024,
+  "raw_review_threshold_bytes": 8,
+  "audit_json_path": "ghostline_audit.jsonl",
+  "action_json_path": "ghostline_actions.jsonl"
+}

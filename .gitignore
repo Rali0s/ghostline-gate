@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+
+# CMake / build outputs
+/build/
+/build-local/
+/cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+Testing/
+CTestTestfile.cmake
+cmake_install.cmake
+compile_commands.json
+
+# Binaries and local scratch artifacts
+/echo_server
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.a
+*.out
+
+# Ghostline runtime logs
+/ghostline_audit.log
+/ghostline_actions.log
+/ghostline_audit.jsonl
+/ghostline_actions.jsonl
+
+# Ghostline operator state
+/ghostline_review_queue/
+/ghostline_replays/
+/ghostline_target_profiles/
+
+# Simulation outputs
+/sim-output/
+
+# Temp endpoint marker files created during local experiments
+/127.0.0.1:*
+
+# Editor / swap noise
+*.swp
+*.swo
+*~
