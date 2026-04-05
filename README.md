@@ -6,6 +6,8 @@ However much I know and work with the 'Mailboxes' I still need to finish my Rpi 
 
 Ghostline Gate is a transport-first interception and mutation workbench for live TCP traffic. It is built around one rule above all others:
 
+##  The Ghostline Mutation Gate
+
 **original delivery always wins unless Ghostline can prove a modified release is safe.**
 
 Today, Ghostline is a macOS-first Phase 1 system with a production-shaped CLI core, a usable Qt operator app, compiled-in protocol plugins, file-driven controls, JSONL audit/action streams, saved target profiles, and a pending review queue for risky mutations.
